@@ -1,6 +1,6 @@
 {
-    "input_path": "..\\processed\\iconset",
-    "output_path": "results\\iconset\\pokegan",
+    "input_path": "../processed/iconset",
+    "output_path": "results/iconset/pokegan",
     "latent_dim": 16,
     "image_size": [
         24,

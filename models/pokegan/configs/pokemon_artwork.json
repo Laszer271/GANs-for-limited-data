@@ -1,6 +1,6 @@
 {
-    "input_path": "..\\processed\\pokemon_artwork",
-    "output_path": "results\\pokemon_artwork\\pokegan",
+    "input_path": "../processed/pokemon_artwork",
+    "output_path": "results/pokemon_artwork/pokegan",
     "latent_dim": 64,
     "image_size": [
         128,

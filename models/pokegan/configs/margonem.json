@@ -1,6 +1,6 @@
 {
-    "input_path": "..\\processed\\margonem",
-    "output_path": "results\\margonem\\pokegan",
+    "input_path": "../processed/margonem",
+    "output_path": "results/margonem/pokegan",
     "latent_dim": 32,
     "image_size": [
         48,

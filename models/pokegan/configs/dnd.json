@@ -1,6 +1,6 @@
 {
-    "input_path": "..\\processed\\dnd",
-    "output_path": "results\\dnd\\pokegan",
+    "input_path": "../processed/dnd",
+    "output_path": "results/dnd/pokegan",
     "latent_dim": 128,
     "image_size": [
         256,

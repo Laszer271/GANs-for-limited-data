@@ -1,6 +1,6 @@
 {
-    "input_path": "..\\processed\\profantasy",
-    "output_path": "results\\profantasy\\pokegan",
+    "input_path": "../processed/profantasy",
+    "output_path": "results/profantasy/pokegan",
     "latent_dim": 128,
     "image_size": [
         256,
