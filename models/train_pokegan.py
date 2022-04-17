@@ -32,8 +32,9 @@ def save_images(GAN, vec, filename):
 if __name__ == '__main__':
     
     cnf_path = os.path.join('pokegan', 'configs')
-    configs = ['iconset.json', 'margonem.json', 'pokemon_pixelart.json',
-               'profantasy.json', 'dnd.json']
+    configs = [#'iconset.json', 'margonem.json', 'pokemon_pixelart.json',
+               #'profantasy.json', 'dnd.json',
+               'pokemon_artwork.json']
     
     for config in configs:
         print('\n', '='*50)
