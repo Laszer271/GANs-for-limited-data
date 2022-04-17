@@ -10,7 +10,7 @@
     "min_img_size": 4,
     "epochs": 200,
     "print_frequency": 30,
-    "clr_jit_hue": 0.1,
+    "clr_jit_hue": 0.0,
     "translate_factor": 2.0,
     "fill_color": [
         255,

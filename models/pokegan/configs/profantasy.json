@@ -8,10 +8,10 @@
     ],
     "batch_size": 8,
     "min_img_size": 4,
-    "epochs": 300,
+    "epochs": 500,
     "print_frequency": 10,
-    "clr_jit_hue": 0.05,
-    "translate_factor": 5.0,
+    "clr_jit_hue": 0.0,
+    "translate_factor": 0.0,
     "fill_color": [
         255,
         255,
