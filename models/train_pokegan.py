@@ -90,7 +90,12 @@ if __name__ == '__main__':
         with open(os.path.join(config['output_path'], 'used_config.json'), 'w') as f:
             json.dump(config, f)
             
-        test_images = torch.cat((dataset[0], dataset[1]), 0)[:36].cuda()
+        test_images = dataset[0]
+        i = 1
+        while test_images.shape[0] < 36:
+            test_images = torch.cat((test_images, dataset[i]), 0)
+            i += 1
+        test_images = test_images[:36].cuda()
     
         noise_fn = lambda x: torch.randn((x, config['latent_dim']), device=device)
         test_noise = noise_fn(36)
