@@ -110,7 +110,7 @@ if __name__ == '__main__':
         for i in range(config['epochs']):
             print(f'Epoch: {i+1}/{config["epochs"]}')
             gan.train_epoch(print_frequency=config['print_frequency'])
-            if (i + 1) % 1 == 0:
+            if (i + 1) % 10 == 0:
                 gan.save_model(str(i), network_checkpoints)
             
             save_images(gan, test_noise,
@@ -131,11 +131,11 @@ if __name__ == '__main__':
         print(f'FINISHED TRAINING IN: {time.time() - start:.3f} SECONDS')
         wandb.finish()
         
-        print('Memory allocated before emptying:', torch.cuda.memory_allocated(0))
+        print('Memory allocated before emptying cache:', torch.cuda.memory_allocated(0))
         del gan
         del reconstructed
         del dataset
         del test_noise
         torch.cuda.empty_cache()
-        print('Memory allocated after emptying:', torch.cuda.memory_allocated(0))
+        print('Memory allocated after emptying cache:', torch.cuda.memory_allocated(0))
     
