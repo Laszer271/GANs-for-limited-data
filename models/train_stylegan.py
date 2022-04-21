@@ -70,7 +70,7 @@ if __name__ == "__main__":
         training_stats.init_globals()
         
         wandb.init(project=project, entity=entity, #config=config,
-                   group=group, job_type=job_types)
+                   group=group, job_type=job_type)
         
         with open(config, 'r') as f:
             args = json.load(f)
