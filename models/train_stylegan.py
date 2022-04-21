@@ -56,6 +56,8 @@ if __name__ == "__main__":
         ]
     
     for config in configs:
+        print('='*50)
+        print('Starting config:', config, '\n')
         dnnlib.util.Logger(should_flush=True)
         
         with open(config, 'r') as f:
@@ -90,4 +92,4 @@ if __name__ == "__main__":
             subprocess_fn(rank=0, args=args, temp_dir=temp_dir)
             
         torch.cuda.empty_cache()
-        print(config, 'completed')
+        print('Completed congfig:', config, '\n')
