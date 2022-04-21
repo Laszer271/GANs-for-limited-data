@@ -69,7 +69,7 @@ if __name__ == "__main__":
         dnnlib.util.Logger(should_flush=True)
         training_stats.init_globals()
         
-        wandb.init(project=project, entity=entity, config=config,
+        wandb.init(project=project, entity=entity, #config=config,
                    group=group, job_type=job_types)
         
         with open(config, 'r') as f:
