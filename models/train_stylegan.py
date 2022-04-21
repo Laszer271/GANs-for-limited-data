@@ -105,6 +105,7 @@ if __name__ == "__main__":
             
         wandb.finish()
         torch.cuda.empty_cache()
-        os.remove('./wandb/')
+        os.remove('./results/')
         print('Completed congfig:', config, '\n')
+        os.remove('./wandb/')
         
