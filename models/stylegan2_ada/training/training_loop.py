@@ -348,7 +348,7 @@ def training_loop(
         if rank == 0:
             print(' '.join(fields))
         
-        counters = {k: cnt for k, cnt in training_stats._counters.items() if k.type == device.type}
+        counters = {k: cnt for k, cnt in training_stats._counters.items() if list(cnt.keys())[0].type == 'cuda'}
         print('counters:\n', counters)
         counters = {k: cnt[device][1] for k, cnt in training_stats._counters.items()}
         print('counters2:\n', counters)
