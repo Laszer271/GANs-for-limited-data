@@ -86,7 +86,7 @@ def save_image_grid(img, name, drange, grid_size):
         img = PIL.Image.fromarray(img, 'RGB')#.save(fname)
         
     img = wandb.Image(img)
-    wandb.log({'generated': img}, commit=False)
+    wandb.log({name: img}, commit=False)
 
 #----------------------------------------------------------------------------
 
