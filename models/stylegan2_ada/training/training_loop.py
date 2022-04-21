@@ -347,10 +347,11 @@ def training_loop(
         training_stats.report0('Timing/total_days', (tick_end_time - start_time) / (24 * 60 * 60))
         if rank == 0:
             print(' '.join(fields))
-        print(training_stats._counters)
         
-        counters = {k: cnt[device][1] for k, cnt in training_stats._counters.items() if k == device}
+        counters = {k: cnt for k, cnt in training_stats._counters.items() if k.type == device.type}
         print('counters:\n', counters)
+        counters = {k: cnt[device][1] for k, cnt in training_stats._counters.items()}
+        print('counters2:\n', counters)
         wandb.log(counters)
 
         # Check for abort.
