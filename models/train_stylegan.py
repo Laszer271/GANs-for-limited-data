@@ -24,6 +24,7 @@ from stylegan2_ada.torch_utils import training_stats
 from stylegan2_ada.torch_utils import custom_ops
 
 import wandb
+import shutil
 
 def subprocess_fn(rank, args, temp_dir):
     dnnlib.util.Logger(file_name=os.path.join(args.run_dir, 'log.txt'), file_mode='a', should_flush=True)
@@ -105,7 +106,7 @@ if __name__ == "__main__":
             
         wandb.finish()
         torch.cuda.empty_cache()
-        os.remove('./results/')
+        shutil.rmtree('./results/')
+        shutil.rmtree('./wandb/')
         print('Completed congfig:', config, '\n')
-        os.remove('./wandb/')
         
