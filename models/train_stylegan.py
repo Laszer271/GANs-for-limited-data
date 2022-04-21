@@ -59,6 +59,7 @@ if __name__ == "__main__":
         print('='*50)
         print('Starting config:', config, '\n')
         dnnlib.util.Logger(should_flush=True)
+        training_stats.init_globals()
         
         with open(config, 'r') as f:
             args = json.load(f)
