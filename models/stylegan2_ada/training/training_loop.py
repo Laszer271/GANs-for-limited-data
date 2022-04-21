@@ -350,6 +350,7 @@ def training_loop(
         print(training_stats._counters)
         
         counters = {k: cnt[1] for k, cnt in training_stats._counters if device.type=='cuda'}
+        print('counters:\n', counters)
         wandb.log(counters)
 
         # Check for abort.
