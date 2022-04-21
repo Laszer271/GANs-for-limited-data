@@ -29,6 +29,19 @@ _sync_called    = False         # Has _sync() been called yet?
 _counters       = dict()        # Running counters on each device, updated by report(): name => device => torch.Tensor
 _cumulative     = dict()        # Cumulative counters on the CPU, updated by _sync(): name => torch.Tensor
 
+def init_globals():
+    global _num_moments, _reduce_dtype, _counter_dtype, _rank, _sync_device
+    global _sync_called, _counters, _cumulative
+    
+    _num_moments    = 3             
+    _reduce_dtype   = torch.float32 
+    _counter_dtype  = torch.float64 
+    _rank           = 0             
+    _sync_device    = None          
+    _sync_called    = False         
+    _counters       = dict()        
+    _cumulative     = dict()   
+
 #----------------------------------------------------------------------------
 
 def init_multiprocessing(rank, sync_device):
