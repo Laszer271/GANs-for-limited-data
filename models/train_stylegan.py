@@ -23,6 +23,8 @@ from stylegan2_ada.metrics import metric_main
 from stylegan2_ada.torch_utils import training_stats
 from stylegan2_ada.torch_utils import custom_ops
 
+import wandb
+
 def subprocess_fn(rank, args, temp_dir):
     dnnlib.util.Logger(file_name=os.path.join(args.run_dir, 'log.txt'), file_mode='a', should_flush=True)
 
@@ -55,11 +57,20 @@ if __name__ == "__main__":
         'stylegan2_ada/configs/config_pokemon_artwork.json',
         ]
     
-    for config in configs:
+    job_types = ['margonem', 'iconset', 'pokemon_pixelart', 'dnd',
+                'profantasy', 'pokemon_artwork']
+    project = 'praca_dyplomowa'
+    entity = 'laszer'
+    group = 'stylegan2_ada'
+    
+    for config, job_type in zip(configs, job_types):
         print('='*50)
         print('Starting config:', config, '\n')
         dnnlib.util.Logger(should_flush=True)
         training_stats.init_globals()
+        
+        wandb.init(project=project, entity=entity, config=config,
+                   group=group, job_type=job_types)
         
         with open(config, 'r') as f:
             args = json.load(f)
@@ -92,5 +103,7 @@ if __name__ == "__main__":
         with tempfile.TemporaryDirectory() as temp_dir:
             subprocess_fn(rank=0, args=args, temp_dir=temp_dir)
             
+        wandb.finish()
         torch.cuda.empty_cache()
         print('Completed congfig:', config, '\n')
+        

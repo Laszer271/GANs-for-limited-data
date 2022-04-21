@@ -24,6 +24,8 @@ from stylegan2_ada.torch_utils.ops import grid_sample_gradfix
 from stylegan2_ada import legacy
 from stylegan2_ada.metrics import metric_main
 
+import wandb
+
 #----------------------------------------------------------------------------
 
 def setup_snapshot_image_grid(training_set, random_seed=0):
@@ -346,6 +348,9 @@ def training_loop(
         if rank == 0:
             print(' '.join(fields))
         print(training_stats._counters)
+        
+        counters = {k: cnt[1] for k, cnt in training_stats._counters if device.type=='cuda'}
+        wandb.log(counters)
 
         # Check for abort.
         if (not done) and (abort_fn is not None) and abort_fn():

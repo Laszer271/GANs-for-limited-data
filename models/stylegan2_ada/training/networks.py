@@ -497,7 +497,6 @@ class Generator(torch.nn.Module):
         self.z_dim = z_dim
         self.c_dim = c_dim
         self.w_dim = w_dim
-        print('Gen resolution:', img_resolution)
         self.img_resolution = img_resolution
         self.img_channels = img_channels
         
