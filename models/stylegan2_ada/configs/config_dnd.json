@@ -68,10 +68,10 @@
         "class_name": "stylegan2_ada.training.loss.StyleGAN2Loss",
         "r1_gamma": 0.8192
     },
-    "total_kimg": 25000,
+    "total_kimg": 1,
     "batch_size": 16,
     "batch_gpu": 16,
-    "ema_kimg": 5.0,
+    "ema_kimg": 0.5,
     "ema_rampup": 0.05,
     "ada_target": 0.6,
     "augment_kwargs": {
