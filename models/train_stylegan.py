@@ -90,4 +90,4 @@ if __name__ == "__main__":
             subprocess_fn(rank=0, args=args, temp_dir=temp_dir)
             
         torch.cuda.empty_cache()
-        raise 
+        print(config, 'completed')
