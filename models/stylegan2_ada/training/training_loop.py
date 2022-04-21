@@ -350,7 +350,7 @@ def training_loop(
         
         counters = {k: cnt for k, cnt in training_stats._counters.items() if list(cnt.keys())[0].type == 'cuda'}
         print('counters:\n', counters)
-        counters = {k: list(cnt.values())[0][1] for k, cnt in training_stats._counters.items()}
+        counters = {k: list(cnt.values())[0][1].item() for k, cnt in training_stats._counters.items()}
         print('counters2:\n', counters)
         wandb.log(counters)
 
