@@ -9,7 +9,7 @@ import dataloaders
 import pokegan
 import matplotlib.pyplot as plt
 import time
-from pokegan.aegan_refactored import AEGAN
+from pokegan.aegan import AEGAN
 from utils import get_downsampling_scheme
 import wandb
 import json
@@ -80,7 +80,7 @@ if __name__ == '__main__':
         print('\nLOADING DATASET')
         dataset = dataloaders.BasicDataset(
             files, torchvision.transforms.ToTensor(), transform,
-            measure_time=True, batch_size=config['batch_size'], convert_to_rgb=True)
+            measure_time=True, batch_size=config['batch_size'], convert_to_rgb=False)
         print('LOADED DATASET SHAPE:', dataset.get_shape())
     
         print('SAVING AUGMENTATION PREVIEW')        
