@@ -203,6 +203,8 @@ def training_loop(
         if name is not None:
             ddp_modules[name] = module
 
+    print('Initial:', float(augment_pipe.p.cpu()))
+
     # Setup training phases.
     if rank == 0:
         print('Setting up training phases...')
@@ -322,11 +324,13 @@ def training_loop(
         cur_nimg += batch_size
         batch_idx += 1
 
+        print('Before ADA:', float(augment_pipe.p.cpu()))
         # Execute ADA heuristic.
         if (ada_stats is not None) and (batch_idx % ada_interval == 0):
             ada_stats.update()
             adjust = np.sign(ada_stats['Loss/signs/real'] - ada_target) * (batch_size * ada_interval) / (ada_kimg * 1000)
             augment_pipe.p.copy_((augment_pipe.p + adjust).max(misc.constant(0, device=device)))
+        print('After ADA:', float(augment_pipe.p.cpu()))
 
         # Perform maintenance tasks once per tick.
         done = (cur_nimg >= total_kimg * 1000)
