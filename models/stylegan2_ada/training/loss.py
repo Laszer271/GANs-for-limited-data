@@ -67,9 +67,18 @@ class StyleGAN2Loss(Loss):
                 gen_img, _gen_ws = self.run_G(gen_z, gen_c, sync=(sync and not do_Gpl)) # May get synced by Gpl.
                 gen_logits = self.run_D(gen_img, gen_c, sync=False)
                 training_stats.report('Loss/scores/fake', gen_logits)
-                training_stats.report('Loss/signs/fake', gen_logits.sign())
+                signs = gen_logits.sign()
+                training_stats.report('Loss/signs/fake', signs)
+                
+                training_stats.logger.add_log('Generator/scores', gen_logits.mean())
+                training_stats.logger.add_log('Generator/scores/absolute', torch.abs(gen_logits).mean())
+                training_stats.logger.add_log('Generator/sign_sum', signs.sum())
+                
                 loss_Gmain = torch.nn.functional.softplus(-gen_logits) # -log(sigmoid(gen_logits))
                 training_stats.report('Loss/G/loss', loss_Gmain)
+                
+                training_stats.logger.add_log('Generator/loss', loss_Gmain.mean())
+                
             with torch.autograd.profiler.record_function('Gmain_backward'):
                 loss_Gmain.mean().mul(gain).backward()
 
@@ -86,8 +95,10 @@ class StyleGAN2Loss(Loss):
                 self.pl_mean.copy_(pl_mean.detach())
                 pl_penalty = (pl_lengths - pl_mean).square()
                 training_stats.report('Loss/pl_penalty', pl_penalty)
+                training_stats.logger.add_log('Generator/pl_penalty', pl_penalty.mean())
                 loss_Gpl = pl_penalty * self.pl_weight
                 training_stats.report('Loss/G/reg', loss_Gpl)
+                training_stats.logger.add_log('Generator/loss_reg', loss_Gpl.mean())
             with torch.autograd.profiler.record_function('Gpl_backward'):
                 (gen_img[:, 0, 0, 0] * 0 + loss_Gpl).mean().mul(gain).backward()
 
@@ -98,8 +109,15 @@ class StyleGAN2Loss(Loss):
                 gen_img, _gen_ws = self.run_G(gen_z, gen_c, sync=False)
                 gen_logits = self.run_D(gen_img, gen_c, sync=False) # Gets synced by loss_Dreal.
                 training_stats.report('Loss/scores/fake', gen_logits)
-                training_stats.report('Loss/signs/fake', gen_logits.sign())
+                signs = gen_logits.sign()
+                training_stats.report('Loss/signs/fake', signs)
+                
+                training_stats.logger.add_log('Discriminator/fake/scores', gen_logits.mean())
+                training_stats.logger.add_log('Discriminator/fake/scores/absolute', torch.abs(gen_logits).mean())
+                training_stats.logger.add_log('Discriminator/fake/sign_sum', signs.sum())
+                
                 loss_Dgen = torch.nn.functional.softplus(gen_logits) # -log(1 - sigmoid(gen_logits))
+                training_stats.logger.add_log('Discriminator/fake/loss/', loss_Dgen.mean())
             with torch.autograd.profiler.record_function('Dgen_backward'):
                 loss_Dgen.mean().mul(gain).backward()
 
@@ -111,12 +129,20 @@ class StyleGAN2Loss(Loss):
                 real_img_tmp = real_img.detach().requires_grad_(do_Dr1)
                 real_logits = self.run_D(real_img_tmp, real_c, sync=sync)
                 training_stats.report('Loss/scores/real', real_logits)
-                training_stats.report('Loss/signs/real', real_logits.sign())
+                signs = real_logits.sign()
+                training_stats.report('Loss/signs/real', signs)
+                
+                training_stats.logger.add_log('Discriminator/real/scores', real_logits.mean())
+                training_stats.logger.add_log('Discriminator/real/scores/absolute', torch.abs(real_logits).mean())
+                training_stats.logger.add_log('Discriminator/real/sign_sum', signs.sum())
 
                 loss_Dreal = 0
                 if do_Dmain:
                     loss_Dreal = torch.nn.functional.softplus(-real_logits) # -log(sigmoid(real_logits))
-                    training_stats.report('Loss/D/loss', loss_Dgen + loss_Dreal)
+                    loss_D = loss_Dgen + loss_Dreal
+                    training_stats.report('Loss/D/loss', loss_D)
+                    training_stats.logger.add_log('Discriminator/real/loss/', loss_Dreal.mean())
+                    training_stats.logger.add_log('Discriminator/loss', loss_D.mean())
 
                 loss_Dr1 = 0
                 if do_Dr1:
@@ -126,6 +152,9 @@ class StyleGAN2Loss(Loss):
                     loss_Dr1 = r1_penalty * (self.r1_gamma / 2)
                     training_stats.report('Loss/r1_penalty', r1_penalty)
                     training_stats.report('Loss/D/reg', loss_Dr1)
+                    
+                    training_stats.logger.add_log('Discriminator/r1_penalty', r1_penalty.mean())
+                    training_stats.logger.add_log('Discriminator/loss_reg', loss_Dr1.mean())
 
             with torch.autograd.profiler.record_function(name + '_backward'):
                 (real_logits * 0 + loss_Dreal + loss_Dr1).mean().mul(gain).backward()

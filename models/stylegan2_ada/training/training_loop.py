@@ -353,8 +353,9 @@ def training_loop(
         if rank == 0:
             print(' '.join(fields))
         
-        counters = {k: list(cnt.values())[0][1].item() for k, cnt in training_stats._counters.items() if list(cnt.keys())[0].type == 'cuda'}
-        wandb.log(counters)
+        #counters = {k: list(cnt.values())[0][1].item() for k, cnt in training_stats._counters.items() if list(cnt.keys())[0].type == 'cuda'}
+        training_stats.logger.add_log('AugIntensity', float(augment_pipe.p.cpu()))
+        training_stats.logger.upload_logs()
 
         # Check for abort.
         if (not done) and (abort_fn is not None) and abort_fn():

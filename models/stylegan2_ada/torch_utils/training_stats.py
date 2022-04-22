@@ -18,6 +18,19 @@ from stylegan2_ada import dnnlib
 
 from . import misc
 
+import wandb
+
+#----------------------------------------------------------------------------
+
+class Logger:
+    def __init__(self):
+        self.log_dict = {}
+    
+    def add_log(self, name, val):
+        self.log_dict[name] = val
+
+    def upload_logs(self, commit=True):
+        wandb.log(self.log_dict, commit=commit)
 #----------------------------------------------------------------------------
 
 _num_moments    = 3             # [num_scalars, sum_of_scalars, sum_of_squares]
@@ -28,10 +41,11 @@ _sync_device    = None          # Device to use for multiprocess communication. 
 _sync_called    = False         # Has _sync() been called yet?
 _counters       = dict()        # Running counters on each device, updated by report(): name => device => torch.Tensor
 _cumulative     = dict()        # Cumulative counters on the CPU, updated by _sync(): name => torch.Tensor
+logger = Logger()
 
 def init_globals():
     global _num_moments, _reduce_dtype, _counter_dtype, _rank, _sync_device
-    global _sync_called, _counters, _cumulative
+    global _sync_called, _counters, _cumulative, logger
     
     _num_moments    = 3             
     _reduce_dtype   = torch.float32 
@@ -41,6 +55,7 @@ def init_globals():
     _sync_called    = False         
     _counters       = dict()        
     _cumulative     = dict()   
+    logger = Logger()
 
 #----------------------------------------------------------------------------
 
