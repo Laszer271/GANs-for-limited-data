@@ -106,10 +106,10 @@ def report(name, value):
     moments = moments.to(_counter_dtype)
 
     device = moments.device
-    #if device not in _counters[name]:
-    #    _counters[name][device] = torch.zeros_like(moments)
-    #_counters[name][device].add_(moments)
-    _counters[name][device] = moments
+    if device not in _counters[name]:
+        _counters[name][device] = torch.zeros_like(moments)
+    _counters[name][device].add_(moments)
+    #_counters[name][device] = moments
     return value
 
 #----------------------------------------------------------------------------
