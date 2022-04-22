@@ -1,7 +1,7 @@
 {
     "num_gpus": 1,
-    "image_snapshot_ticks": 50,
-    "network_snapshot_ticks": 50,
+    "image_snapshot_ticks": 25,
+    "network_snapshot_ticks": 25,
     "metrics": [],
     "random_seed": 0,
     "training_set_kwargs": {
@@ -68,7 +68,7 @@
         "class_name": "stylegan2_ada.training.loss.StyleGAN2Loss",
         "r1_gamma": 0.014400000000000001
     },
-    "total_kimg": 1000,
+    "total_kimg": 3000,
     "batch_size": 32,
     "batch_gpu": 32,
     "ema_kimg": 10.0,
