@@ -328,11 +328,7 @@ def training_loop(
         if (ada_stats is not None) and (batch_idx % ada_interval == 0):
             print('Before ADA:', float(augment_pipe.p.cpu()))
             ada_stats.update()
-            print(ada_stats['Loss/signs/real'])
-            print(ada_target)
-            print(batch_size)
-            print(ada_interval)
-            print(ada_kimg / 1000)
+            print(ada_stats)
             adjust = np.sign(ada_stats['Loss/signs/real'] - ada_target) * (batch_size * ada_interval) / (ada_kimg * 1000)
             print('Adjust:', adjust)
             print('Constant:', misc.constant(0, device=device))
