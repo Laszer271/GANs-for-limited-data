@@ -1,0 +1,20 @@
+{
+ "path": "../processed/profantasy",
+ "cuda": 0,
+ "name": "profantasy",
+ "iter": 50000,
+ "start_iter": 0,
+ "batch_size": 8,
+ "im_size": [256, 256],
+ "min_img_size": 3,
+ "ckpt": "None",
+ "ndf": 64,
+ "ngf": 64,
+ "nz": 256,
+ "nlr": 0.0002,
+ "nbeta1": 0.5,
+ "use_cuda": true,
+ "multi_gpu": false,
+ "dataloader_workers": 8,
+ "save_interval": 100
+}
