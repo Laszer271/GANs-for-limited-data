@@ -60,6 +60,8 @@ class BasicDataset(Dataset):
         self.length = len(self.X)
         self.reshuffle = reshuffle
         
+        self.index = 0
+        
         if self.reshuffle:
             random.shuffle(self.X)
             
@@ -78,10 +80,11 @@ class BasicDataset(Dataset):
         if end_pos > len(self):
             if self.reshuffle:
                 random.shuffle(self.X)
+            else:
+                self.X = self.X[start_pos:] + self.X[:start_pos]
             raise IndexError
 
         sampled = self.X[start_pos: start_pos + self.batch_size]
-        
         return sampled
     
     def __getitem__(self, index):
@@ -96,4 +99,21 @@ class BasicDataset(Dataset):
             self.time_taken += time.time() - start
             
         return torch.stack(sampled)
+    
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        start_pos = self.index * self.batch_size
+        end_pos = start_pos + self.batch_size
+        
+        if end_pos > len(self):
+            if self.reshuffle:
+                random.shuffle(self.X)
+            else:
+                self.X = self.X[start_pos:] + self.X[:start_pos]
+            self.index = 0
+        
+        sampled = self.X[start_pos: start_pos + self.batch_size]
+        return sampled
         
