@@ -115,5 +115,7 @@ class BasicDataset(Dataset):
             self.index = 0
         
         sampled = self.X[start_pos: start_pos + self.batch_size]
-        return sampled
+        if self.transform is not None:
+            sampled = [self.transform(x) for x in sampled]
+        return torch.stack(sampled)
         
