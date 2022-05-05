@@ -2,7 +2,7 @@
  "path": "../processed/profantasy",
  "cuda": 0,
  "name": "profantasy",
- "iter": 50000,
+ "iter": 1000,
  "start_iter": 0,
  "batch_size": 8,
  "im_size": [256, 256],
