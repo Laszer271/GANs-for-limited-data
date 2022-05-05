@@ -150,9 +150,7 @@ class Generator(nn.Module):
             setattr(self, 'feat_' + str('_'.join(str(i) for i in sizes[i+1])), block)
             
             if i >= len(self.sizes) // 2:
-                print((i - len(self.sizes) // 2, i+1))
                 se_block = SEBlock(nfc[sizes[i-len(self.sizes)//2]], nfc[sizes[i+1]])
-                print('se_' + str('_'.join(str(i) for i in sizes[i+1])))
                 setattr(self, 'se_' + str('_'.join(str(i) for i in sizes[i+1])), se_block)
 
         self.minor_size = self.sizes[-2]
@@ -165,32 +163,24 @@ class Generator(nn.Module):
         
         
     def forward(self, input):
-        
-        print(input.shape)
-        
+                
         feat = self.init(input)
         feats = [feat]
-        print('feat_4:', feat.shape)
         for i in range(len(self.sizes) - 1):
             size = self.sizes[i+1]
             block_name = 'feat_' + str('_'.join(str(i) for i in size))
             block = getattr(self, block_name)
             feat = block(feat)
-            print(f'{block_name}:', feat.shape )
             
             if i >= len(self.sizes) // 2:
                 block_name = 'se_' + str('_'.join(str(i) for i in size))
                 se_block = getattr(self, block_name)
                 feat = se_block(feats[i - len(self.sizes) // 2], feat)
-                print((i - len(self.sizes) // 2, i+1))
-                print(f'after {block_name}:', feat.shape)
             
             feats.append(feat)
 
         out1 = self.to_big(feats[-1])
         out2 = self.to_small(feats[-2])
-        print('out1:', out1.shape)
-        print('out2:', out2.shape)
         
         return [out1, out2]
 
@@ -252,50 +242,34 @@ class Discriminator(nn.Module):
                                 nn.LeakyReLU(0.2, inplace=True))
         
         for i in range(len(self.sizes)-1):
-            print('=' * 50)
-            print('i:', i)
             current_size = self.sizes[i]
             next_size = self.sizes[i+1]
-            print('Current size:', current_size, 'Next size:', next_size)
-            print('Current n_ch:', nfc[current_size], 'Next n_ch:', nfc[next_size])
             
             block_name = 'down_to_' + 'x'.join((str(s) for s in next_size))
             block = DownBlockComp(nfc[current_size], nfc[next_size])
             setattr(self, block_name, block)
-            
-            print(block_name)
-            
+                        
             if i >= (len(self.sizes)) // 2:
                 smaller_size = self.sizes[i - len(self.sizes) // 2]
-                print('Bigger size:', smaller_size, 'Next size:', next_size)
                 se_block = SEBlock(nfc[smaller_size], nfc[next_size])
                 block_name = 'se_to_' + 'x'.join(str(i) for i in next_size)
-                print(block_name)
                 setattr(self, block_name, se_block)
             
         self.rf_big = conv2d(nfc[self.sizes[-1]], channels_out,
                 kernel_size=final_kernel, stride=1, padding=0, bias=False)
-
-        print('\nSmaller:')
 
         sizes = self.sizes[1:]
         layers_for_small = [conv2d(nc, nfc[sizes[0]], kernel_size=3,
                                    stride=1, padding=1, bias=False), 
                             nn.LeakyReLU(0.2, inplace=True),]
         for i in range(len(sizes)-1):
-            print('=' * 50)
-            print('i:', i)
             current_size = sizes[i]
             next_size = sizes[i+1]
-            print('Current size:', current_size, 'Next size:', next_size)
-            print('Current n_ch:', nfc[current_size], 'Next n_ch:', nfc[next_size])
             
             block_name = 'smaller_down_to_' + 'x'.join((str(s) for s in next_size))
             block = DownBlock(nfc[current_size], nfc[next_size])
             layers_for_small.append(block)
-            
-            print(block_name)
-            
+                        
         self.down_from_small = nn.Sequential(*layers_for_small)
 
         self.rf_small = conv2d(nfc[sizes[-1]], channels_out, kernel_size=final_kernel,
@@ -309,52 +283,33 @@ class Discriminator(nn.Module):
         if type(imgs) is not list:
             imgs = [F.interpolate(imgs, size=self.im_size), F.interpolate(imgs, size=self.sizes[1])]
 
-        print('input:', imgs[0].shape)
         feat = self.down_from_big(imgs[0])
-        print('feat:', feat.shape)
         
         feats = [feat]
         
         for i in range(len(self.sizes)-1):
-            print('=' * 50)
-            print('i:', i)
-            current_size = self.sizes[i]
             next_size = self.sizes[i+1]
-            print('Current size:', current_size, 'Next size:', next_size)
 
             block_name = 'down_to_' + 'x'.join((str(s) for s in next_size))
             block = getattr(self, block_name)
             feat = block(feat)
-            print(block_name)
-            print('feat:', feat.shape)
             
             if i >= (len(self.sizes)) // 2:
                 small_index = i - len(self.sizes) // 2
-                smaller_size = self.sizes[small_index]
-                print('Bigger size:', smaller_size, 'Next size:', next_size)
                 block_name = 'se_to_' + 'x'.join(str(i) for i in next_size)
                 block = getattr(self, block_name)
-                print('feat_small:', feats[small_index].shape)
                 feat = block(feats[small_index], feat)
-                print(block_name)
-                print('feat*:', feat.shape)
             
             feats.append(feat)
         
         feat_small = self.down_from_small(imgs[1])
-        print('\nfeat_small:', feat_small.shape)
         
         rf_0 = self.rf_big(feat).view(-1)
-        print('rf_0:', rf_0.shape)
         rf_1 = self.rf_small(feat_small).view(-1)
-        print('rf_1:', rf_1.shape)
-        print('cat:', torch.cat([rf_0, rf_1]).shape)
 
         if label=='real':    
             rec_img_big = self.decoder_big(feat)
-            print('rec_img_big:', rec_img_big.shape)
             rec_img_small = self.decoder_small(feat_small)
-            print('rec_img_small:', rec_img_small.shape)
             
             feat_for_crop = feats[-2]
             crop_size = (feat_for_crop.shape[2] // 2, feat_for_crop.shape[3] // 2)
@@ -370,10 +325,8 @@ class Discriminator(nn.Module):
             if part==3:
                 crop = feat_for_crop[:,:,crop_size[0]:,crop_size[1]:]
 
-            print('Crop:', crop.shape)
             rec_img_part = self.decoder_part(crop)
 
-            print('rec_img_part:', rec_img_part.shape)
             return torch.cat([rf_0, rf_1]) , [rec_img_big, rec_img_small, rec_img_part]
 
         return torch.cat([rf_0, rf_1]) 
