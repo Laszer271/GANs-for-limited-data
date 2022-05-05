@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     
     for iteration in tqdm(range(current_iteration, args['iter']+1)):
-        real_image = next(dataloader)
+        real_image = dataloader[i]
         real_image = real_image.to(device)
         current_batch_size = real_image.size(0)
         noise = torch.Tensor(current_batch_size, args['nz']).normal_(0, 1).to(device)
