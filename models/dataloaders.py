@@ -29,22 +29,31 @@ def drop_alpha(img):
     return img
 
 def load_and_transform(files, transform, convert_to_rgb=False):
+    images = []
+    if transform is None:
+        transform = lambda x: x
+    
+    for f in files:
+        temp = Image.open(f)
+        img = temp.copy()
+        images.append(img)
+        temp.close()
+    
     if convert_to_rgb:
-        return [transform(drop_alpha(Image.open(file))) for file in files]
-    return [transform(Image.open(file)) for file in files]
+        return [transform(drop_alpha(img)) for img in images]
+    return [transform(img) for img in images]
 
 class BasicDataset(Dataset):
-    def __init__(self, X, initial_transform=torchvision.transforms.ToTensor(),
+    def __init__(self, X, initial_transform=None,
                  transform=None, measure_time=False, batch_size=1, reshuffle=True,
                  convert_to_rgb=False):
         super().__init__()
         self.X = load_and_transform(X, initial_transform, convert_to_rgb)
         
-        shape = self.X[0].shape
-        print(shape)
-        assert all([shape == x.shape for x in self.X])
-        
         self.transform = transform
+        self.shape = self.transform(self.X[0]).shape
+        assert all([self.shape == self.transform(x).shape for x in self.X])
+        
         self.measure_time = measure_time
         self.time_taken = 0.0
         self.batch_size = batch_size
@@ -53,7 +62,6 @@ class BasicDataset(Dataset):
         
         if self.reshuffle:
             random.shuffle(self.X)
-        print('DATASET CREATED')
             
     def __len__(self):
         return self.length
@@ -89,7 +97,3 @@ class BasicDataset(Dataset):
             
         return torch.stack(sampled)
         
-        
-
-def load_dataset():
-    pass
