@@ -1,9 +1,9 @@
 {
     "image_snapshot_ticks": 1,
     "network_snapshot_ticks": 1,
-    "total_kimg": 2,
+    "total_kimg": 3000,
     "batch_size": 16,
-    "n_steps": 2,
+    "n_steps": 750,
     "path": "../processed/pokemon_artwork",
     "cuda": 0,
     "name": "pokemon_artwork",
