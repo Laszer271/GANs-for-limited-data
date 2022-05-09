@@ -181,6 +181,8 @@ if __name__ == "__main__":
         network_snapshot_ticks = args['network_snapshot_ticks']
         
         old_rec = None
+        
+        log = {}
 
         for step in range(args['n_steps']):
             for i in range(batches_per_step):
@@ -214,10 +216,13 @@ if __name__ == "__main__":
                 for p, avg_p in zip(netG.parameters(), avg_param_G):
                     avg_p.mul_(0.99).add_(0.01 * p.data)
         
-            losses = {'Loss/Discriminator/Real': err_dr,
-                      'Loss/Discriminator/Fake': err_df,
-                      'Loss/Generator': err_g,}
-            wandb.log(losses)
+            log['Loss/Discriminator/Real'] = err_dr
+            log['Loss/Discriminator/Fake'] = err_df
+            log['Loss/Generator'] = err_g
+            
+            wandb.log(log)
+            
+            log = {}
             print("step: %d/%d: loss d_real: %.5f, loss d_fake: %.5f, loss g: %.5f"%
                   (step, args['n_steps'], err_dr, err_df, -err_g.item()))
             
@@ -234,18 +239,14 @@ if __name__ == "__main__":
                     rec_img_part = rec_img_part[:l].detach().cpu()
                     reconstructed = torch.cat([real, rec_img_all, rec_img_small, rec_img_part])
                     
-                    viz_gen = visualize(generated)
-                    viz_gen_small = visualize(generated_small)
-                    viz_rec = visualize(reconstructed, l)
-                    
-                    if old_rec is not None:
-                        print('diff:', np.sum(np.abs(np.array(viz_rec) - np.array(old_rec))) / np.prod(viz_rec.shape))
-                    old_rec = viz_rec
+                    viz_gen = wandb.Image(visualize(generated))
+                    viz_gen_small = wandb.Image(visualize(generated_small))
+                    viz_rec = wandb.Image(visualize(reconstructed, l))
                     
                     #TO WANDB
-                    wandb.log({'FakesGenerated': wandb.Image(viz_gen)}, commit=False)
-                    wandb.log({'FakesGeneratedSmall': wandb.Image(viz_gen)}, commit=False)
-                    wandb.log({'Reconstructed': wandb.Image(viz_rec)}, commit=False)
+                    log['FakesGenerated'] = viz_gen
+                    log['FakesGeneratedSmall'] = viz_gen_small
+                    log['Reconstructed'] = viz_rec
     
                 load_params(netG, backup_para)
     
