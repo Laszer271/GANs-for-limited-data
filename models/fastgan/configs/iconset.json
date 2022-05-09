@@ -1,6 +1,6 @@
 {
-    "image_snapshot_ticks": 1,
-    "network_snapshot_ticks": 1,
+    "image_snapshot_ticks": 25,
+    "network_snapshot_ticks": 25,
     "total_kimg": 3000,
     "batch_size": 32,
     "n_steps": 750,
