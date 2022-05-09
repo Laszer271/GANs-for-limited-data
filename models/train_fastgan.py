@@ -179,6 +179,8 @@ if __name__ == "__main__":
         batch_size = args['batch_size']
         image_snapshot_ticks = args['image_snapshot_ticks']
         network_snapshot_ticks = args['network_snapshot_ticks']
+        
+        old_rec = None
 
         for step in range(args['n_steps']):
             for i in range(batches_per_step):
@@ -235,6 +237,10 @@ if __name__ == "__main__":
                     viz_gen = visualize(generated)
                     viz_gen_small = visualize(generated_small)
                     viz_rec = visualize(reconstructed, l)
+                    
+                    if old_rec is not None:
+                        print('diff:', np.sum(np.abs(np.array(viz_rec) - np.array(old_rec))))
+                    old_rec = viz_rec
                     
                     #TO WANDB
                     wandb.log({'FakesGenerated': wandb.Image(viz_gen)}, commit=False)
