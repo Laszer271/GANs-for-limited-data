@@ -1,0 +1,28 @@
+{
+    "image_snapshot_ticks": 1,
+    "network_snapshot_ticks": 1,
+    "total_kimg": 2,
+    "batch_size": 32,
+    "n_steps": 2,
+    "path": "../processed/margonem",
+    "cuda": 0,
+    "name": "margonem",
+    "start_iter": 0,
+    "im_size": [
+        48,
+        32
+    ],
+    "min_img_size": 3,
+    "ckpt": "None",
+    "ndf": 64,
+    "ngf": 64,
+    "nz": 64,
+    "nlr": 0.0002,
+    "nbeta1": 0.5,
+    "use_cuda": true,
+    "multi_gpu": false,
+    "project": "praca_dyplomowa",
+    "entity": "laszer",
+    "group": "fastgan",
+    "job_type": "margonem"
+}

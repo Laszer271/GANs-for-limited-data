@@ -87,6 +87,12 @@ class BasicDataset(Dataset):
         sampled = self.X[start_pos: start_pos + self.batch_size]
         return sampled
     
+    def random_sample(self, n):
+        sampled = random.sample(self.X, n)
+        if self.transform is not None:
+            sampled = [self.transform(x) for x in sampled]
+        return torch.stack(sampled)
+    
     def __getitem__(self, index):
         if self.measure_time:
             start = time.time()

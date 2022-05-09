@@ -85,11 +85,11 @@ class SEBlock(nn.Module):
 
 
 class InitLayer(nn.Module):
-    def __init__(self, nz, channel):
+    def __init__(self, nz, channel, size):
         super().__init__()
 
         self.init = nn.Sequential(
-                        convTranspose2d(nz, channel*2, 4, 1, 0, bias=False),
+                        convTranspose2d(nz, channel*2, size, 1, 0, bias=False),
                         batchNorm2d(channel*2), GLU() )
 
     def forward(self, noise):
@@ -126,18 +126,19 @@ class Generator(nn.Module):
 
         self.sizes = sizes
         
-        initial_size = sizes[0]
         self.output_size = sizes[-1]
-        channels = 64 * ngf // int(np.round(np.sqrt(np.prod(initial_size))))
+        possible_n_channels = [2**i for i in range(1, 12)]
         
         nfc = {}
-        for k in self.sizes:
-            nfc[k] = channels
-            channels = channels // 2
+        for s in self.sizes:
+            val = 64 * ngf // int(np.round(np.sqrt(np.prod(s))))
+            diffs = [np.abs(val - v) for v in possible_n_channels]
+            val = possible_n_channels[np.argmin(diffs)]
+            nfc[s] = val
 
         print('nfc:', nfc)
 
-        self.init = InitLayer(nz, channel=nfc[sizes[0]])
+        self.init = InitLayer(nz, channel=nfc[sizes[0]], size=sizes[0])
         
         for i in range(len(self.sizes) - 1):
             n_channels = nfc[sizes[i]]
@@ -227,12 +228,14 @@ class Discriminator(nn.Module):
         self.sizes = sizes
         
         self.output_size = sizes[-1]
-        channels = 64 * ndf // int(np.round(np.sqrt(np.prod(self.im_size))))
+        possible_n_channels = [2**i for i in range(1, 12)]
 
         nfc = {}
-        for k in self.sizes:
-            nfc[k] = channels
-            channels = channels * 2
+        for s in self.sizes:
+            val = 64 * ndf // int(np.round(np.sqrt(np.prod(s))))
+            diffs = [np.abs(val - v) for v in possible_n_channels]
+            val = possible_n_channels[np.argmin(diffs)]
+            nfc[s] = val
             
         print('nfc:', nfc)
 
@@ -293,7 +296,6 @@ class Discriminator(nn.Module):
             block_name = 'down_to_' + 'x'.join((str(s) for s in next_size))
             block = getattr(self, block_name)
             feat = block(feat)
-            
             if i >= (len(self.sizes)) // 2:
                 small_index = i - len(self.sizes) // 2
                 block_name = 'se_to_' + 'x'.join(str(i) for i in next_size)
