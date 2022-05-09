@@ -62,6 +62,14 @@ def train_d(net, data, label="real"):
         err = F.relu( torch.rand_like(pred) * 0.2 + 0.8 + pred).mean()
         err.backward()
         return pred.mean().item()
+    
+def get_model_mem(model):
+    mem_params = sum([param.nelement()*param.element_size() for param in model.parameters()])
+    mem_bufs = sum([buf.nelement()*buf.element_size() for buf in model.buffers()])
+    return mem_params, mem_bufs
+
+def get_model_params(model):
+    return sum([sum(param.size()) for param in model.parameters()])
 
 if __name__ == "__main__":
     
@@ -71,7 +79,8 @@ if __name__ == "__main__":
     
     for name in names:
         config = os.path.join(config_base_name, name + '.json')
-        print('\nSTARTING CONFIG:', config, '\n')
+        print('\n', '='*50)
+        print('STARTING CONFIG:', config, '\n')
         with open(config, 'r') as f:
             args = json.load(f)
             
@@ -109,13 +118,13 @@ if __name__ == "__main__":
         print('Dataset loaded')
         print('Dataset shape:', (len(dataloader), *dataloader.shape))
         
+        
         imgs_per_step = args['total_kimg'] * 1000 // args['n_steps']
         batches_per_step = imgs_per_step // args['batch_size']
         
         sizes = get_downsampling_scheme(args['im_size'], args['min_img_size'])
         
         print('initialization')
-        #from model_s import Generator, Discriminator
         
         print('Building generator')
         netG = Generator(sizes=sizes[::-1], ngf=args['ngf'], nz=args['nz'])
@@ -130,10 +139,15 @@ if __name__ == "__main__":
         netD = Discriminator(sizes=sizes, ndf=args['ndf'])
         print('Initializing discriminator')
         netD.apply(weights_init)
-        
+
         print('Testing discriminator')
         fixed_noise = torch.FloatTensor(4, 3, *args['im_size']).normal_(0, 1)
         out = netD.forward(fixed_noise, label='real', part=np.random.randint(0, 3))
+        
+        print('netG mem:', sum([mem / 1_000_000 for mem in get_model_mem(netG)]))
+        print('netG params:', get_model_params(netG))
+        print('netD mem:', sum([mem / 1_000_000 for mem in get_model_mem(netD)]))
+        print('netD params:', get_model_params(netD))
         
         netG.to(device)
         netD.to(device)
@@ -165,7 +179,7 @@ if __name__ == "__main__":
         batch_size = args['batch_size']
         image_snapshot_ticks = args['image_snapshot_ticks']
         network_snapshot_ticks = args['network_snapshot_ticks']
-        
+
         for step in range(args['n_steps']):
             for i in range(batches_per_step):
                 real_image = dataloader.random_sample(batch_size)
