@@ -236,10 +236,16 @@ if __name__ == "__main__":
                 wandb.save(filename)
                 
         wandb.finish()
-        del netG
-        del optimizerG
-        del netD
-        del optimizerD
+        del netG, netD
+        del optimizerG, optimizerD
+        del err_dr, rec_img_all, rec_img_small, rec_img_part
+        del real_image, noise
+        del fakes, fakes_small
+        del err_df
+        del pred_g, err_g
+        del p, avg_p
+        del backup_para, avg_param_G
+        
         shutil.rmtree(temp_dir)
         shutil.rmtree('./wandb/')
         torch.cuda.empty_cache()
