@@ -210,7 +210,7 @@ if __name__ == "__main__":
                 optimizerG.step()
         
                 for p, avg_p in zip(netG.parameters(), avg_param_G):
-                    avg_p.mul_(0.999).add_(0.001 * p.data)
+                    avg_p.mul_(0.99).add_(0.01 * p.data)
         
             losses = {'Loss/Discriminator/Real': err_dr,
                       'Loss/Discriminator/Fake': err_df,
@@ -224,6 +224,7 @@ if __name__ == "__main__":
                 load_params(netG, avg_param_G)
                 with torch.no_grad():
                     generated = netG(fixed_noise)[0].add(1).mul(0.5).detach().cpu()
+                    generated_small = netG(fixed_noise)[0].add(1).mul(0.5).detach().cpu()
                     real = F.interpolate(real_image[:8], 128).detach().cpu()
                     l = len(real)
                     rec_img_all = rec_img_all[:l].detach().cpu()
@@ -232,10 +233,12 @@ if __name__ == "__main__":
                     reconstructed = torch.cat([real, rec_img_all, rec_img_small, rec_img_part])
                     
                     viz_gen = visualize(generated)
+                    viz_gen_small = visualize(generated_small)
                     viz_rec = visualize(reconstructed, l)
                     
                     #TO WANDB
                     wandb.log({'FakesGenerated': wandb.Image(viz_gen)}, commit=False)
+                    wandb.log({'FakesGeneratedSmall': wandb.Image(viz_gen)}, commit=False)
                     wandb.log({'Reconstructed': wandb.Image(viz_rec)}, commit=False)
     
                 load_params(netG, backup_para)
