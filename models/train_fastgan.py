@@ -183,7 +183,7 @@ if __name__ == "__main__":
                 netD.zero_grad()
         
                 err_dr, rec_img_all, rec_img_small, rec_img_part = train_d(netD, real_image, label="real")
-                err_df = train_d(netD, [fakes, fakes_small], label="fake")
+                err_df = train_d(netD, [fakes.detach(), fakes_small.detach()], label="fake")
                 optimizerD.step()
                 
                 ## 3. train Generator
@@ -208,12 +208,12 @@ if __name__ == "__main__":
                 backup_para = copy_G_params(netG)
                 load_params(netG, avg_param_G)
                 with torch.no_grad():
-                    generated = netG(fixed_noise)[0].add(1).mul(0.5).detach()
-                    real = F.interpolate(real_image[:8], 128).detach()
+                    generated = netG(fixed_noise)[0].add(1).mul(0.5).detach().cpu()
+                    real = F.interpolate(real_image[:8], 128).detach().cpu()
                     l = len(real)
-                    rec_img_all = rec_img_all[:l].detach()
-                    rec_img_small = rec_img_small[:l].detach()
-                    rec_img_part = rec_img_part[:l].detach()
+                    rec_img_all = rec_img_all[:l].detach().cpu()
+                    rec_img_small = rec_img_small[:l].detach().cpu()
+                    rec_img_part = rec_img_part[:l].detach().cpu()
                     reconstructed = torch.cat([real, rec_img_all, rec_img_small, rec_img_part])
                     
                     viz_gen = visualize(generated)
