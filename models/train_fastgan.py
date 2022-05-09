@@ -231,7 +231,7 @@ if __name__ == "__main__":
                 load_params(netG, avg_param_G)
                 with torch.no_grad():
                     generated = netG(fixed_noise)[0].add(1).mul(0.5).detach().cpu()
-                    generated_small = netG(fixed_noise)[0].add(1).mul(0.5).detach().cpu()
+                    generated_small = netG(fixed_noise)[1].add(1).mul(0.5).detach().cpu()
                     real = F.interpolate(real_image[:8], 128).detach().cpu()
                     l = len(real)
                     rec_img_all = rec_img_all[:l].detach().cpu()
