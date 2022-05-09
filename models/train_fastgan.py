@@ -239,7 +239,7 @@ if __name__ == "__main__":
                     viz_rec = visualize(reconstructed, l)
                     
                     if old_rec is not None:
-                        print('diff:', np.sum(np.abs(np.array(viz_rec) - np.array(old_rec))))
+                        print('diff:', np.sum(np.abs(np.array(viz_rec) - np.array(old_rec))) / np.prod(viz_rec.shape))
                     old_rec = viz_rec
                     
                     #TO WANDB
