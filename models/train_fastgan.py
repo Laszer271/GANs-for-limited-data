@@ -71,6 +71,7 @@ if __name__ == "__main__":
     
     for name in names:
         config = os.path.join(config_base_name, name + '.json')
+        print('\nSTARTING CONFIG:', config, '\n')
         with open(config, 'r') as f:
             args = json.load(f)
             
@@ -78,7 +79,7 @@ if __name__ == "__main__":
         wandb.init(project=args['project'], entity=args['entity'], config=args,
                    group=args['group'], job_type=args['job_type'])
             
-        temp_dir = os.path.join('results', name)
+        temp_dir = 'results'
         os.makedirs(temp_dir, exist_ok=True)
                 
         device = torch.device("cpu")
