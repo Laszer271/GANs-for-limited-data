@@ -216,8 +216,8 @@ if __name__ == "__main__":
                       'Loss/Discriminator/Fake': err_df,
                       'Loss/Generator': err_g,}
             wandb.log(losses)
-            print("GAN: loss d_real: %.5f, loss d_fake: %.5f, loss g: %.5f"%
-                  (err_dr, err_df, -err_g.item()))
+            print("step: %d/%d: loss d_real: %.5f, loss d_fake: %.5f, loss g: %.5f"%
+                  (step, args['n_steps'], err_dr, err_df, -err_g.item()))
             
             if step % image_snapshot_ticks == 0:
                 backup_para = copy_G_params(netG)
