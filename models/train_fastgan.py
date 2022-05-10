@@ -115,19 +115,13 @@ if __name__ == "__main__":
             ])
         
         print('Loading dataset')
-        if 'lmdb' in args['path']:
-            from operation import MultiResolutionDataset
-            dataset = MultiResolutionDataset(args['path'], transform, 1024)
-            dataloader = iter(DataLoader(
-                dataset, batch_size=args['batch_size'], shuffle=False,
-                sampler=InfiniteSamplerWrapper(dataset),
-                num_workers=args['dataloader_workers'], pin_memory=True))
-        else:
-            files = dataloaders.get_files(args['path'], ('.png', '.jpg', '.jpeg'))
-            dataloader = dataloaders.BasicDataset(
-                X=files, initial_transform=None, transform=transform,
-                measure_time=True, batch_size=args['batch_size'],
-                convert_to_rgb=False)
+
+        files = dataloaders.get_files(args['path'], ('.png', '.jpg', '.jpeg'))
+        dataloader = dataloaders.BasicDataset(
+            X=files, initial_transform=None, transform=transform,
+            measure_time=True, batch_size=args['batch_size'],
+            convert_to_rgb=False)
+        
         print('Dataset loaded')
         print('Dataset shape:', (len(dataloader), *dataloader.shape))
         
