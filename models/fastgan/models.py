@@ -6,6 +6,8 @@ import torch.nn.functional as F
 import random
 import numpy as np
 
+import copy
+
 seq = nn.Sequential
 
 def weights_init(m):
@@ -277,10 +279,22 @@ class Discriminator(nn.Module):
 
         self.rf_small = conv2d(nfc[sizes[-1]], channels_out, kernel_size=final_kernel,
                                stride=1, padding=0, bias=False)
-
-        self.decoder_big = SimpleDecoder(nfc[self.sizes[-1]], nc)
-        self.decoder_part = SimpleDecoder(nfc[self.sizes[-2]], nc)
-        self.decoder_small = SimpleDecoder(nfc[self.sizes[-1]], nc)
+        
+        print('='*50)
+        print('decoder_big:')
+        self.decoder_big = SimpleDecoder(copy.deepcopy(nfc),in_res=self.sizes[-1],
+                                          out_res=self.sizes[1],
+                                          nfc_in=nfc[self.sizes[-1]], nc=nc)
+        print('='*50)
+        print('decoder_small:')
+        self.decoder_small = SimpleDecoder(copy.deepcopy(nfc),in_res=self.sizes[-1],
+                                          out_res=self.sizes[1],
+                                          nfc_in=nfc[self.sizes[-1]], nc=nc)
+        print('='*50)
+        print('decoder_part:')
+        self.decoder_part = SimpleDecoder(copy.deepcopy(nfc), in_res=self.sizes[-1],
+                                          out_res=self.sizes[1],
+                                          nfc_in=nfc[self.sizes[-2]], nc=nc)
         
     def forward(self, imgs, label, part=None):
         if type(imgs) is not list:
@@ -328,7 +342,6 @@ class Discriminator(nn.Module):
                 crop = feat_for_crop[:,:,crop_size[0]:,crop_size[1]:]
 
             rec_img_part = self.decoder_part(crop)
-
             return torch.cat([rf_0, rf_1]) , [rec_img_big, rec_img_small, rec_img_part]
 
         return torch.cat([rf_0, rf_1]) 
@@ -336,29 +349,39 @@ class Discriminator(nn.Module):
 
 class SimpleDecoder(nn.Module):
     """docstring for CAN_SimpleDecoder"""
-    def __init__(self, nfc_in=64, nc=3):
+    def __init__(self, nfc, in_res, out_res, nfc_in, nc=3):
         super(SimpleDecoder, self).__init__()
 
-        nfc_multi = {4:16, 8:8, 16:4, 32:2, 64:2, 128:1, 256:0.5, 512:0.25, 1024:0.125}
-        nfc = {}
-        for k, v in nfc_multi.items():
-            nfc[k] = int(v*32)
+        print('nfc_in:', nfc_in)
+        decoder_nfc = {}
+        for k, v in nfc.items():
+            if k[0] >= in_res[0] and k[1] >= in_res[1] and k[0] <= out_res[0] and k[1] <= out_res[1]:
+                decoder_nfc[k] = nfc[k] // 2
+        print('decoder nfc:', decoder_nfc)
+        
+        sizes = sorted(list(decoder_nfc.keys()), key=lambda x: x[0])
+        print('sizes:', sizes)
 
         def upBlock(in_planes, out_planes):
             block = nn.Sequential(
                 nn.Upsample(scale_factor=2, mode='nearest'),
                 conv2d(in_planes, out_planes*2, 3, 1, 1, bias=False),
-                batchNorm2d(out_planes*2), GLU())
+                batchNorm2d(out_planes*2),
+                GLU())
             return block
 
-        self.main = nn.Sequential(  nn.AdaptiveAvgPool2d(8),
-                                    upBlock(nfc_in, nfc[16]) ,
-                                    upBlock(nfc[16], nfc[32]),
-                                    upBlock(nfc[32], nfc[64]),
-                                    upBlock(nfc[64], nfc[128]),
-                                    conv2d(nfc[128], nc, 3, 1, 1, bias=False),
-                                    nn.Tanh() )
-
+        layers = []
+        current_nfc = nfc_in
+        for i in range(len(sizes)-1):
+            next_nfc = decoder_nfc[sizes[i+1]]
+            block = upBlock(current_nfc, next_nfc)
+            current_nfc = next_nfc
+            layers.append(block)
+        
+        layers.append(conv2d(current_nfc, nc, 3, 1, 1, bias=False))
+        layers.append(nn.Tanh())
+        self.main = nn.Sequential(*layers)
+        
     def forward(self, input):
         # input shape: c x 4 x 4
         return self.main(input)

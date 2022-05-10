@@ -29,32 +29,45 @@ import shutil
 #torch.backends.cudnn.benchmark = True
 
 def visualize(images, nrows=8):
-    viz = vutils.make_grid(images, normalize=True, nrow=nrows, padding=2)
+    viz = vutils.make_grid(images, normalize=False, nrow=nrows, padding=2)
     viz = viz.numpy().transpose((1,2,0))
     viz = np.array(viz * 255, dtype=np.uint8)
     
     return viz
 
 def crop_image_by_part(image, part):
-    hw = image.shape[2]//2
+    h = image.shape[2] // 2
+    w = image.shape[3] // 2
     if part==0:
-        return image[:,:,:hw,:hw]
+        return image[:,:,:h,:w]
     if part==1:
-        return image[:,:,:hw,hw:]
+        return image[:,:,:h,w:]
     if part==2:
-        return image[:,:,hw:,:hw]
+        return image[:,:,h:,:w]
     if part==3:
-        return image[:,:,hw:,hw:]
+        return image[:,:,h:,w:]
 
-def train_d(net, data, label="real"):
+def train_d(net, data, interp_size=None, label="real"):
     """Train function of discriminator"""
     if label=="real":
         part = random.randint(0, 3)
         pred, [rec_all, rec_small, rec_part] = net(data, label, part=part)
-        err = F.relu(  torch.rand_like(pred) * 0.2 + 0.8 -  pred).mean() + \
-            percept( rec_all, F.interpolate(data, rec_all.shape[2]) ).sum() +\
-            percept( rec_small, F.interpolate(data, rec_small.shape[2]) ).sum() +\
-            percept( rec_part, F.interpolate(crop_image_by_part(data, part), rec_part.shape[2]) ).sum()
+        crop = crop_image_by_part(data, part)
+        
+        data = F.interpolate(data, interp_size)
+        
+        if rec_all.shape[2:] != interp_size:
+            crop = F.interpolate(crop, interp_size)
+            rec_all = F.interpolate(rec_all, interp_size)
+            rec_small = F.interpolate(rec_small, interp_size)
+            rec_part = F.interpolate(rec_part, interp_size)
+        
+        loss_rec_all = percept(rec_all, data).sum()
+        loss_rec_small = percept(rec_small, data).sum()
+        loss_rec_part = percept(rec_all, crop).sum()
+        
+        err = F.relu(torch.rand_like(pred) * 0.2 + 0.8 - pred).mean() + \
+            loss_rec_all + loss_rec_small + loss_rec_part
         err.backward()
         return pred.mean().item(), rec_all, rec_small, rec_part
     else:
@@ -118,11 +131,11 @@ if __name__ == "__main__":
         print('Dataset loaded')
         print('Dataset shape:', (len(dataloader), *dataloader.shape))
         
-        
         imgs_per_step = args['total_kimg'] * 1000 // args['n_steps']
         batches_per_step = imgs_per_step // args['batch_size']
         
-        sizes = get_downsampling_scheme(args['im_size'], args['min_img_size'])
+        im_size = args['im_size']
+        sizes = get_downsampling_scheme(im_size, args['min_img_size'])
         
         print('initialization')
         
@@ -137,6 +150,7 @@ if __name__ == "__main__":
     
         print('\nBuilding discriminator')
         netD = Discriminator(sizes=sizes, ndf=args['ndf'])
+        print('='*50, '\n')
         print('Initializing discriminator')
         netD.apply(weights_init)
 
@@ -144,10 +158,12 @@ if __name__ == "__main__":
         fixed_noise = torch.FloatTensor(4, 3, *args['im_size']).normal_(0, 1)
         out = netD.forward(fixed_noise, label='real', part=np.random.randint(0, 3))
         
+        print()
+        
         print('netG mem:', sum([mem / 1_000_000 for mem in get_model_mem(netG)]))
         print('netG params:', get_model_params(netG))
         print('netD mem:', sum([mem / 1_000_000 for mem in get_model_mem(netD)]))
-        print('netD params:', get_model_params(netD))
+        print('netD params:', get_model_params(netD), '\n')
         
         netG.to(device)
         netD.to(device)
@@ -156,7 +172,6 @@ if __name__ == "__main__":
         avg_param_G = copy_G_params(netG)
     
         fixed_noise = torch.FloatTensor(8*8, args['nz']).normal_(0, 1).to(device)
-        
         optimizerG = optim.Adam(netG.parameters(), lr=args['nlr'], betas=(args['nbeta1'], 0.999))
         optimizerD = optim.Adam(netD.parameters(), lr=args['nlr'], betas=(args['nbeta1'], 0.999))
         
@@ -180,9 +195,9 @@ if __name__ == "__main__":
         image_snapshot_ticks = args['image_snapshot_ticks']
         network_snapshot_ticks = args['network_snapshot_ticks']
         
-        old_rec = None
-        
         log = {}
+
+        interp_size = sizes[1] if sizes[1][0] >= 16 and sizes[1][1] >= 16 else sizes[0]
 
         for step in range(args['n_steps']):
             for i in range(batches_per_step):
@@ -201,7 +216,7 @@ if __name__ == "__main__":
                 ## 2. train Discriminator
                 netD.zero_grad()
         
-                err_dr, rec_img_all, rec_img_small, rec_img_part = train_d(netD, real_image, label="real")
+                err_dr, rec_img_all, rec_img_small, rec_img_part = train_d(netD, real_image, interp_size=interp_size, label="real")
                 err_df = train_d(netD, [fakes.detach(), fakes_small.detach()], label="fake")
                 optimizerD.step()
                 
@@ -215,7 +230,7 @@ if __name__ == "__main__":
         
                 for p, avg_p in zip(netG.parameters(), avg_param_G):
                     avg_p.mul_(0.99).add_(0.01 * p.data)
-        
+                
             log['Loss/Discriminator/Real'] = err_dr
             log['Loss/Discriminator/Fake'] = err_df
             log['Loss/Generator'] = err_g
@@ -232,7 +247,10 @@ if __name__ == "__main__":
                 with torch.no_grad():
                     generated = netG(fixed_noise)[0].add(1).mul(0.5).detach().cpu()
                     generated_small = netG(fixed_noise)[1].add(1).mul(0.5).detach().cpu()
-                    real = F.interpolate(real_image[:8], 128).detach().cpu()
+                    generated = torch.clip(generated, 0, 1)
+                    generated_small = torch.clip(generated_small, 0, 1)
+                    
+                    real = F.interpolate(real_image[:8], interp_size).detach().cpu()
                     l = len(real)
                     rec_img_all = rec_img_all[:l].detach().cpu()
                     rec_img_small = rec_img_small[:l].detach().cpu()
@@ -249,7 +267,7 @@ if __name__ == "__main__":
                     log['Reconstructed'] = viz_rec
     
                 load_params(netG, backup_para)
-    
+            
             if step % network_snapshot_ticks == 0:
                 filename = os.path.join(temp_dir, f'models_{step}.pth')
                 torch.save({'g':netG.state_dict(),
@@ -259,6 +277,7 @@ if __name__ == "__main__":
                             'opt_d': optimizerD.state_dict()},
                            filename)
                 wandb.save(filename)
+            
                 
         wandb.finish()
         del netG, netD
