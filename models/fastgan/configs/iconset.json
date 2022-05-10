@@ -1,9 +1,9 @@
 {
-    "image_snapshot_ticks": 5,
+    "image_snapshot_ticks": 1,
     "network_snapshot_ticks": 25,
-    "total_kimg": 3000,
+    "total_kimg": 1,
     "batch_size": 32,
-    "n_steps": 750,
+    "n_steps": 2,
     "path": "../processed/iconset",
     "cuda": 0,
     "name": "iconset",
