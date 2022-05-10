@@ -114,20 +114,6 @@ if __name__ == "__main__":
                 transforms.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
             ])
         
-        print('Loading dataset')
-
-        files = dataloaders.get_files(args['path'], ('.png', '.jpg', '.jpeg'))
-        dataloader = dataloaders.BasicDataset(
-            X=files, initial_transform=None, transform=transform,
-            measure_time=True, batch_size=args['batch_size'],
-            convert_to_rgb=False)
-        
-        print('Dataset loaded')
-        print('Dataset shape:', (len(dataloader), *dataloader.shape))
-        
-        imgs_per_step = args['total_kimg'] * 1000 // args['n_steps']
-        batches_per_step = imgs_per_step // args['batch_size']
-        
         im_size = args['im_size']
         sizes = get_downsampling_scheme(im_size, args['min_img_size'])
         
@@ -152,9 +138,7 @@ if __name__ == "__main__":
         fixed_noise = torch.FloatTensor(4, 3, *args['im_size']).normal_(0, 1)
         out = netD.forward(fixed_noise, label='real', part=np.random.randint(0, 3))
         
-        print()
-        
-        print('netG mem:', sum([mem / 1_000_000 for mem in get_model_mem(netG)]))
+        print('\nnetG mem:', sum([mem / 1_000_000 for mem in get_model_mem(netG)]))
         print('netG params:', get_model_params(netG))
         print('netD mem:', sum([mem / 1_000_000 for mem in get_model_mem(netD)]))
         print('netD params:', get_model_params(netD), '\n')
@@ -162,6 +146,20 @@ if __name__ == "__main__":
         netG.to(device)
         netD.to(device)
         print('initialization complete')
+        
+        print('\nLoading dataset')
+
+        files = dataloaders.get_files(args['path'], ('.png', '.jpg', '.jpeg'))
+        dataloader = dataloaders.BasicDataset(
+            X=files, initial_transform=None, transform=transform,
+            measure_time=True, batch_size=args['batch_size'],
+            convert_to_rgb=False)
+        
+        print('Dataset loaded')
+        print('Dataset shape:', (len(dataloader), *dataloader.shape))
+        
+        imgs_per_step = args['total_kimg'] * 1000 // args['n_steps']
+        batches_per_step = imgs_per_step // args['batch_size']
         
         avg_param_G = copy_G_params(netG)
     
