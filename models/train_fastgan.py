@@ -167,7 +167,9 @@ if __name__ == "__main__":
         optimizerG = optim.Adam(netG.parameters(), lr=args['nlr'], betas=(args['nbeta1'], 0.999))
         optimizerD = optim.Adam(netD.parameters(), lr=args['nlr'], betas=(args['nbeta1'], 0.999))
         
+        
         if args['ckpt'] != 'None':
+            print('\nLoading checkpoint from:', args['ckpt'], '\n')
             ckpt = torch.load(args['ckpt'])
             netG.load_state_dict(ckpt['g'])
             netD.load_state_dict(ckpt['d'])
@@ -190,6 +192,8 @@ if __name__ == "__main__":
         log = {}
 
         interp_size = sizes[1] if sizes[1][0] >= 16 and sizes[1][1] >= 16 else sizes[0]
+        
+        print('\nTRAINING MODELS\n')
 
         for step in range(args['n_steps']):
             for i in range(batches_per_step):
