@@ -64,7 +64,7 @@ def train_d(net, data, interp_size=None, label="real"):
         
         loss_rec_all = percept(rec_all, data).sum()
         loss_rec_small = percept(rec_small, data).sum()
-        loss_rec_part = percept(rec_all, crop).sum()
+        loss_rec_part = percept(rec_part, crop).sum()
         
         err = F.relu(torch.rand_like(pred) * 0.2 + 0.8 - pred).mean() + \
             loss_rec_all + loss_rec_small + loss_rec_part
