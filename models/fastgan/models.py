@@ -379,7 +379,6 @@ class SimpleDecoder(nn.Module):
             layers.append(block)
         
         layers.append(conv2d(current_nfc, nc, 3, 1, 1, bias=False))
-        layers.append(nn.Tanh())
         self.main = nn.Sequential(*layers)
         
     def forward(self, input):

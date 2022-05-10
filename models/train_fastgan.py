@@ -256,6 +256,7 @@ if __name__ == "__main__":
                     rec_img_small = rec_img_small[:l].detach().cpu()
                     rec_img_part = rec_img_part[:l].detach().cpu()
                     reconstructed = torch.cat([real, rec_img_all, rec_img_small, rec_img_part])
+                    reconstructed = torch.clip(reconstructed.add(1).mul(0.5), 0, 1)
                     
                     viz_gen = wandb.Image(visualize(generated))
                     viz_gen_small = wandb.Image(visualize(generated_small))
