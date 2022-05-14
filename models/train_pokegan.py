@@ -13,21 +13,23 @@ from pokegan.aegan import AEGAN
 from utils import get_downsampling_scheme
 import wandb
 import json
+import shutil
 
 def visualize(images, nrows=6):
-    viz = torchvision.utils.make_grid(images, normalize=True, nrow=nrows, padding=2)
+    viz = torchvision.utils.make_grid(images, normalize=False, nrow=nrows, padding=2)
     viz = viz.numpy().transpose((1,2,0))
     viz = np.array(viz * 255, dtype=np.uint8)
     
     return viz
 
-def save_images(GAN, vec, filename):
+def gen_to_wandb(GAN, vec):
     images = GAN.generate_samples(vec).detach().cpu()
+    images.add_(1).mul_(0.5)
+    images = torch.clip(images, 0, 1)
     viz = visualize(images)
     img = wandb.Image(viz)
-    wandb.log({'generated': img}, commit=False)
-    viz = Image.fromarray(viz)
-    viz.save(filename)
+    return img
+    
 
 if __name__ == '__main__':
     
@@ -35,6 +37,7 @@ if __name__ == '__main__':
     configs = ['iconset.json', 'margonem.json', 'pokemon_pixelart.json',
                'profantasy.json', 'dnd.json',
                'pokemon_artwork.json']
+    temp_path = 'results'
     
     for config in configs:
         print('\n', '='*50)
@@ -44,18 +47,14 @@ if __name__ == '__main__':
         print('TRAINING ON', config['job_type'].upper())
 
         print('INITIATING WANDB')
-        wandb.init(project=config['project'], entity=config['entity'], config=config,
-                   group=config['group'], job_type=config['job_type'])
+        #wandb.init(project=config['project'], entity=config['entity'], config=config,
+                   #group=config['group'], job_type=config['job_type'])
         
         print('\nDOWNSAMPLING SCHEME:')
         SIZES = get_downsampling_scheme(config['image_size'], min_size=config['min_img_size'])
         
-        generated_images = os.path.join(config['output_path'], 'generated')
-        reconstructed_images = os.path.join(config['output_path'], 'reconstructed')
-        network_checkpoints = os.path.join(config['output_path'], 'checkpoints')
+        network_checkpoints = os.path.join(temp_path, 'checkpoints')
         
-        os.makedirs(generated_images, exist_ok=True)
-        os.makedirs(reconstructed_images, exist_ok=True)
         os.makedirs(network_checkpoints, exist_ok=True)
         
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -83,20 +82,25 @@ if __name__ == '__main__':
             measure_time=True, batch_size=config['batch_size'], convert_to_rgb=False)
         print('LOADED DATASET SHAPE:', dataset.get_shape())
     
-        print('SAVING AUGMENTATION PREVIEW')        
-        example = visualize(dataset[0])
-        image = Image.fromarray(example)
-        image.save(os.path.join(config['output_path'], 'test_aug.png'))
         print('SAVING USED CONFIG')
-        with open(os.path.join(config['output_path'], 'used_config.json'), 'w') as f:
+        dump_config_path = os.path.join(temp_path, 'used_config.json')
+        with open(dump_config_path, 'w') as f:
             json.dump(config, f)
+        #wandb.save(dump_config_path)
             
         test_images = dataset[0]
         i = 1
         while test_images.shape[0] < 36:
             test_images = torch.cat((test_images, dataset[i]), 0)
             i += 1
-        test_images = test_images[:36].cuda()
+        test_images = test_images[:36]
+        
+        print('SAVING AUGMENTATION PREVIEW')        
+        example = visualize(test_images)
+        image = Image.fromarray(example)
+        image.save(os.path.join(temp_path, 'test_aug.png'))
+        
+        test_images = test_images.cuda()
     
         noise_fn = lambda x: torch.randn((x, config['latent_dim']), device=device)
         test_noise = noise_fn(36)
@@ -111,37 +115,53 @@ if __name__ == '__main__':
             )
         
         start = time.time()
-    
+        
+        imgs_per_step = config['total_kimg'] * 1000 // config['n_steps']
+        batches_per_step = imgs_per_step // config['batch_size']
+        image_snapshot_ticks = config['image_snapshot_ticks']
+        network_snapshot_ticks = config['network_snapshot_ticks']
+
+        logs = {}
         print('\nTRAINING')
-        for i in range(config['epochs']):
+        for i in range(config['n_steps']):
             print(f'Epoch: {i+1}/{config["epochs"]}')
-            gan.train_epoch(print_frequency=config['print_frequency'])
-            if (i + 1) % 10 == 0:
+            
+            new_logs = gan.train_epoch(config['batch_size'], n_batches=batches_per_step)
+            s = f'Step {i+1}/{config["n_steps"]+1}\n'
+            for k, v in new_logs.items:
+                s += f'{k}={v}:.3f\t'
+            print(s, end='\n', lush=True)
+
+            
+            logs.update(new_logs)
+            wandb.log(logs)
+            logs = new_logs
+
+            if i % network_snapshot_ticks == 0:
                 gan.save_model(str(i), network_checkpoints)
-            
-            save_images(gan, test_noise,
-                os.path.join(generated_images, f"gen_{i}.png"))
-    
-            with torch.no_grad():
-                reconstructed = gan.generator(gan.encoder(test_images)).detach().cpu()
+                wandb.save(os.path.join(network_checkpoints, str(i)) + '.pt')
                 
-            reconstructed = visualize(reconstructed)
-            wandb.log({'reconstructed': wandb.Image(reconstructed)}, commit=False)
-            reconstructed = Image.fromarray(reconstructed)
-            reconstructed.save(os.path.join(reconstructed_images, f"gen_{i}.png"))
-            
-        #wandb.save(os.path.join(network_checkpoints, 'generator', '*.pt'))
-        #wandb.save(os.path.join(network_checkpoints, 'encoder', '*.pt'))
-        #wandb.save(os.path.join(network_checkpoints, 'disc_img', '*.pt'))
-        #wandb.save(os.path.join(network_checkpoints, 'disc_latent', '*.pt'))
+            if i % image_snapshot_ticks == 0:
+                img = gen_to_wandb(gan, test_noise)
+                logs['generated'] = img
+    
+                with torch.no_grad():
+                    rec_img = gen_to_wandb(gan, gan.encoder(test_images))
+                    logs['reconstructed'] = img
+                
         print(f'FINISHED TRAINING IN: {time.time() - start:.3f} SECONDS')
         wandb.finish()
+        
+        shutil.rmtree(temp_path)
+        shutil.rmtree('./wandb/')
         
         print('Memory allocated before emptying cache:', torch.cuda.memory_allocated(0))
         del gan
         del reconstructed
         del dataset
         del test_noise
+        del test_images
+        del reconstructed
         torch.cuda.empty_cache()
         print('Memory allocated after emptying cache:', torch.cuda.memory_allocated(0))
     

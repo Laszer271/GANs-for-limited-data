@@ -1,6 +1,10 @@
 {
+    "image_snapshot_ticks": 1,
+    "network_snapshot_ticks": 1,
+    "total_kimg": 1,
+    "n_steps": 2,
+
     "input_path": "../processed/pokemon_artwork",
-    "output_path": "results/pokemon_artwork/pokegan",
     "latent_dim": 64,
     "image_size": [
         128,
@@ -8,8 +12,6 @@
     ],
     "batch_size": 16,
     "min_img_size": 4,
-    "epochs": 200,
-    "print_frequency": 30,
     "clr_jit_hue": 0.0,
     "translate_factor": 2.0,
     "fill_color": [

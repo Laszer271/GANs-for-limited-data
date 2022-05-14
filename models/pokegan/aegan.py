@@ -477,51 +477,36 @@ class AEGAN():
         if path is None:
             path = wandb.run.dir
         
-        gen_path = os.path.join(path, 'generator')
-        enc_path = os.path.join(path, 'encoder')
-        disc_img_path = os.path.join(path, 'disc_img')
-        disc_latent_path = os.path.join(path, 'disc_latent')
-        
-        os.makedirs(gen_path, exist_ok=True)
-        os.makedirs(enc_path, exist_ok=True)
-        os.makedirs(disc_img_path, exist_ok=True)
-        os.makedirs(disc_latent_path, exist_ok=True)
+        path = os.path.join(path, name) + '.pt'
     
         torch.save(
-            {'model_state_dict': self.generator.state_dict(),
-             'optimizer_state_dict': self.optim_g.state_dict()},
-            os.path.join(gen_path, f"{name}.pt"))
-        
-        torch.save(
-            {'model_state_dict': self.encoder.state_dict(),
-             'optimizer_state_dict': self.optim_e.state_dict()},
-            os.path.join(enc_path, f"{name}.pt"))
-
-        torch.save(
-            {'model_state_dict': self.discriminator_image.state_dict(),
-             'optimizer_state_dict': self.optim_di.state_dict()},
-            os.path.join(disc_img_path, f"{name}.pt"))
-        
-        torch.save(
-            {'model_state_dict': self.discriminator_latent.state_dict(),
-             'optimizer_state_dict': self.optim_dl.state_dict()},
-            os.path.join(disc_latent_path, f"{name}.pt"))
+            {'G': self.generator.state_dict(),
+             'G_opt': self.optim_g.state_dict(),
+             'Enc': self.encoder.state_dict(),
+             'Enc_opt': self.optim_e.state_dict(),
+             'D_img': self.discriminator_image.state_dict(),
+             'D_img_opt': self.optim_di.state_dict(),
+             'D_lat': self.discriminator_latent.state_dict(),
+             'D_lat_opt': self.optim_dl.state_dict()
+             },
+            path)
         
     def load_model(self, path, name):
-        gen_path = os.path.join(path, 'generator', name)
-        enc_path = os.path.join(path, 'encoder', name)
-        disc_img_path = os.path.join(path, 'disc_img', name)
-        disc_latent_path = os.path.join(path, 'disc_latent', name)
+        path = os.path.join(path, name) + '.pt'
+
+        ckpt = torch.load(path)
+        self.generator.load_state_dict(ckpt['G'])
+        self.optim_g.load_state_dict(ckpt['G_opt'])
         
-        paths = [gen_path, enc_path, disc_img_path, disc_latent_path]
-        models = [self.generator, self.encoder,
-                  self.discriminator_image, self.discriminator_latent]
-        optims = [self.optim_g, self.optim_e, self.optim_di, self.optim_dl]
+        self.encoder.load_state_dict(ckpt['Enc'])
+        self.optim_e.load_state_dict(ckpt['Enc_opt'])
         
-        for p, model, opt in zip(paths, models, optims):
-            checkpoint = torch.load(p)
-            model.load_state_dict(checkpoint['model_state_dict'])
-            opt.load_state_dict(checkpoint['optimizer_state_dict'])
+        self.discriminator_image.load_state_dict(ckpt['D_img'])
+        self.optim_di.load_state_dict(ckpt['D_img_opt'])
+        
+        self.discriminator_latent.load_state_dict(ckpt['D_lat'])
+        self.optim_dl.load_state_dict(ckpt['D_lat_opt'])
+
 
     def _init_generator(self):
         self.generator = Generator(latent_dim=self.latent_dim, sizes=list(reversed(self.sizes)))
@@ -646,7 +631,7 @@ class AEGAN():
 
         return loss_images.item(), loss_latent.item()
 
-    def train_epoch(self, print_frequency=1, max_steps=0):
+    def train_epoch(self, batch_size=1, n_batches=1):
         """Train both networks for one epoch and return the losses.
 
         Args:
@@ -655,9 +640,9 @@ class AEGAN():
                              to do the full epoch.
         """
         ldx, ldz, lgx, lgz, lrx, lrz = 0, 0, 0, 0, 0, 0
-        eps = 1e-9
-        batch = 0
-        for real_samples in self.dataloader:
+
+        for _ in range(n_batches):
+            real_samples = self.dataloader.random_sample(batch_size)
             real_samples = real_samples.to(self.device)
             ldx_, ldz_ = self.train_step_discriminators(real_samples)
             ldx += ldx_
@@ -667,34 +652,14 @@ class AEGAN():
             lgz += lgz_
             lrx += lrx_
             lrz += lrz_
-            if print_frequency and (batch+1) % print_frequency == 0:
-                d = {
-                    'G': lgx / (eps + (batch+1) * ALPHA_DISCRIMINATE_IMAGE),
-                    'E': lgz / (eps + (batch+1) * ALPHA_DISCRIMINATE_LATENT),
-                    'Dx': ldx / (eps + (batch+1)),
-                    'Dz': ldz / (eps + (batch+1)),
-                    'Rx': lrx / (eps + (batch+1) * ALPHA_RECONSTRUCT_IMAGE),
-                    'Rz': lrz / (eps + (batch+1) * ALPHA_RECONSTRUCT_LATENT)
-                 }
-                print(f"{batch+1}/{self.dataloader.get_nr_of_batches()}:"
-                      f" G=:{d['G']:.3f},"
-                      f" E={d['E']:.3f},"
-                      f" Dx={d['Dx']:.3f},"
-                      f" Dz={d['Dz']:.3f}",
-                      f" Rx={d['Rx']:.3f}",
-                      f" Rz={d['Rz']:.3f}",
-                      end='\n',
-                      flush=True)
-                wandb.log(d)
-            if max_steps and batch == max_steps:
-                break
-            batch += 1
-        if print_frequency:
-            print()
-        lgx /= batch
-        lgz /= batch
-        ldx /= batch
-        ldz /= batch
-        lrx /= batch
-        lrz /= batch
-        return lgx, lgz, ldx, ldz, lrx, lrz
+        
+        d = {
+               'G': lgx / n_batches,
+               'E': lgz / n_batches,
+               'Dx': ldx / n_batches,
+               'Dz': ldz / n_batches,
+               'Rx': lrx / n_batches,
+               'Rz': lrz / n_batches
+            }
+        
+        return d
