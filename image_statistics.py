@@ -128,7 +128,7 @@ def get_left_offsets(masks):
     offsets = []
     for arr in masks:
         offset = -1 # -1 is used where there is no character at all
-        for i in range(masks.shape[2]):
+        for i in range(arr.shape[1]):
             if arr[:, i].any():
                 offset = i
                 break
@@ -139,7 +139,7 @@ def get_right_offsets(masks):
     offsets = []
     for arr in masks:
         offset = -1 # -1 is used where there is no character at all
-        for i in range(masks.shape[2]):
+        for i in range(arr.shape[1]):
             if arr[:, arr.shape[1] - 1 - i].any():
                 offset = i
                 break
@@ -150,7 +150,7 @@ def get_top_offsets(masks):
     offsets = []
     for arr in masks:
         offset = -1 # -1 is used where there is no character at all
-        for i in range(masks.shape[1]):
+        for i in range(arr.shape[0]):
             if arr[i, :].any():
                 offset = i
                 break
@@ -161,7 +161,7 @@ def get_bottom_offsets(masks):
     offsets = []
     for arr in masks:
         offset = -1 # -1 is used where there is no character at all
-        for i in range(masks.shape[1]):
+        for i in range(arr.shape[0]):
             if arr[arr.shape[0] - 1 - i, :].any():
                 offset = i
                 break

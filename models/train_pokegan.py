@@ -47,8 +47,8 @@ if __name__ == '__main__':
         print('TRAINING ON', config['job_type'].upper())
 
         print('INITIATING WANDB')
-        #wandb.init(project=config['project'], entity=config['entity'], config=config,
-                   #group=config['group'], job_type=config['job_type'])
+        wandb.init(project=config['project'], entity=config['entity'], config=config,
+                   group=config['group'], job_type=config['job_type'])
         
         print('\nDOWNSAMPLING SCHEME:')
         SIZES = get_downsampling_scheme(config['image_size'], min_size=config['min_img_size'])
@@ -86,7 +86,7 @@ if __name__ == '__main__':
         dump_config_path = os.path.join(temp_path, 'used_config.json')
         with open(dump_config_path, 'w') as f:
             json.dump(config, f)
-        #wandb.save(dump_config_path)
+        wandb.save(dump_config_path)
             
         test_images = dataset[0]
         i = 1
@@ -123,16 +123,13 @@ if __name__ == '__main__':
 
         logs = {}
         print('\nTRAINING')
-        for i in range(config['n_steps']):
-            print(f'Epoch: {i+1}/{config["epochs"]}')
-            
+        for i in range(config['n_steps']):            
             new_logs = gan.train_epoch(config['batch_size'], n_batches=batches_per_step)
             s = f'Step {i+1}/{config["n_steps"]+1}\n'
-            for k, v in new_logs.items:
+            for k, v in new_logs.items():
                 s += f'{k}={v}:.3f\t'
-            print(s, end='\n', lush=True)
+            print(s, end='\n', flush=True)
 
-            
             logs.update(new_logs)
             wandb.log(logs)
             logs = new_logs
