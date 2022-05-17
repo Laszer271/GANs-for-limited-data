@@ -134,3 +134,4 @@ dmypy.json
 *.h5
 **/results
 **/wandb
+**/raw
