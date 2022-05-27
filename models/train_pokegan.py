@@ -83,7 +83,7 @@ if __name__ == '__main__':
         dataset = dataloaders.BasicDataset(
             files, torchvision.transforms.ToTensor(), transform,
             measure_time=True, batch_size=config['batch_size'], convert_to_rgb=False)
-        raise
+        
         print('LOADED DATASET SHAPE:', dataset.get_shape())
     
         print('SAVING USED CONFIG')
