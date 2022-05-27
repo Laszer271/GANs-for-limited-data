@@ -50,8 +50,8 @@ if __name__ == '__main__':
         print('TRAINING ON', config['job_type'].upper())
 
         print('INITIATING WANDB')
-        #wandb.init(project=config['project'], entity=config['entity'], config=config,
-                   #group=config['group'], job_type=config['job_type'])
+        wandb.init(project=config['project'], entity=config['entity'], config=config,
+                   group=config['group'], job_type=config['job_type'])
         
         print('\nDOWNSAMPLING SCHEME:')
         SIZES = get_downsampling_scheme(config['image_size'], min_size=config['min_img_size'])
