@@ -14,6 +14,7 @@ from utils import get_downsampling_scheme
 import wandb
 import json
 import shutil
+import re
 
 def visualize(images, nrows=6):
     viz = torchvision.utils.make_grid(images, normalize=False, nrow=nrows, padding=2)
@@ -41,14 +42,16 @@ if __name__ == '__main__':
     
     for config in configs:
         print('\n', '='*50)
+        network_name = re.sub('\..*', '', config) + '_network'
+
         config = os.path.join(cnf_path, config)
         with open(config, 'r') as f:
             config = json.load(f)
         print('TRAINING ON', config['job_type'].upper())
 
         print('INITIATING WANDB')
-        wandb.init(project=config['project'], entity=config['entity'], config=config,
-                   group=config['group'], job_type=config['job_type'])
+        #wandb.init(project=config['project'], entity=config['entity'], config=config,
+                   #group=config['group'], job_type=config['job_type'])
         
         print('\nDOWNSAMPLING SCHEME:')
         SIZES = get_downsampling_scheme(config['image_size'], min_size=config['min_img_size'])
@@ -80,6 +83,7 @@ if __name__ == '__main__':
         dataset = dataloaders.BasicDataset(
             files, torchvision.transforms.ToTensor(), transform,
             measure_time=True, batch_size=config['batch_size'], convert_to_rgb=False)
+        raise
         print('LOADED DATASET SHAPE:', dataset.get_shape())
     
         print('SAVING USED CONFIG')
@@ -137,7 +141,7 @@ if __name__ == '__main__':
 
             if i % network_snapshot_ticks == 0:
                 ckpt_path = gan.save_model(str(i), network_checkpoints)
-                wandb.log_artifact(ckpt_path, name='networks_ckpt', type='networks_ckpt')
+                wandb.log_artifact(ckpt_path, name=network_name, type='networks_ckpt')
                 
             if i % image_snapshot_ticks == 0:
                 img = gen_to_wandb(gan, test_noise)
