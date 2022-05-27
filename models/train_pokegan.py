@@ -42,7 +42,7 @@ if __name__ == '__main__':
     
     for config in configs:
         print('\n', '='*50)
-        network_name = re.sub('\..*', '', config) + '_network'
+        network_name = re.sub('\..*', '', config) + '_network_pokegan'
 
         config = os.path.join(cnf_path, config)
         with open(config, 'r') as f:
