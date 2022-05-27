@@ -155,12 +155,11 @@ if __name__ == '__main__':
         
         print('Memory allocated before emptying cache:', torch.cuda.memory_allocated(0))
         del gan
-        del reconstructed
         del dataset
         del test_noise
         del test_images
-        del rec_img
         del img
+        del rec_img
         torch.cuda.empty_cache()
         print('Memory allocated after emptying cache:', torch.cuda.memory_allocated(0))
     
