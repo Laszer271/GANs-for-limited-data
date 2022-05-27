@@ -132,7 +132,7 @@ if __name__ == '__main__':
             new_logs = gan.train_epoch(config['batch_size'], n_batches=batches_per_step)
             s = f'Step {i+1}/{config["n_steps"]}\n'
             for k, v in new_logs.items():
-                s += f'{k}={v}:.3f\t'
+                s += '{}={:0.3f}\t'.format(k, v)
             print(s, end='\n', flush=True)
 
             logs.update(new_logs)
@@ -151,7 +151,7 @@ if __name__ == '__main__':
                     rec_img = gen_to_wandb(gan, gan.encoder(test_images))
                     logs['reconstructed'] = img
                 
-        print(f'FINISHED TRAINING IN: {time.time() - start}:.3f SECONDS')
+        print(f'FINISHED TRAINING IN: {time.time() - start:.3f} SECONDS')
         wandb.finish()
         
         shutil.rmtree(temp_path)
