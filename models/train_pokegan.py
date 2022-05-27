@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
             if i % network_snapshot_ticks == 0:
                 ckpt_path = gan.save_model(str(i), network_checkpoints)
-                wandb.log_artifact(ckpt_path, name=network_name, type='pokegan_networks_ckpt')
+                wandb.log_artifact(ckpt_path, name=network_name, type='networks_ckpt')
                 
             if i % image_snapshot_ticks == 0:
                 img = gen_to_wandb(gan, test_noise)
