@@ -151,7 +151,7 @@ if __name__ == '__main__':
                     rec_img = gen_to_wandb(gan, gan.encoder(test_images))
                     logs['reconstructed'] = img
                 
-        print(f'FINISHED TRAINING IN: {time.time() - start:.3f} SECONDS')
+        print(f'FINISHED TRAINING IN: {time.time() - start}:.3f SECONDS')
         wandb.finish()
         
         shutil.rmtree(temp_path)
