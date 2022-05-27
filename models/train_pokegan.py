@@ -126,7 +126,7 @@ if __name__ == '__main__':
         print('\nTRAINING')
         for i in range(config['n_steps']):            
             new_logs = gan.train_epoch(config['batch_size'], n_batches=batches_per_step)
-            s = f'Step {i+1}/{config["n_steps"]+1}\n'
+            s = f'Step {i+1}/{config["n_steps"]}\n'
             for k, v in new_logs.items():
                 s += f'{k}={v}:.3f\t'
             print(s, end='\n', flush=True)
@@ -159,7 +159,8 @@ if __name__ == '__main__':
         del dataset
         del test_noise
         del test_images
-        del reconstructed
+        del rec_img
+        del img
         torch.cuda.empty_cache()
         print('Memory allocated after emptying cache:', torch.cuda.memory_allocated(0))
     
