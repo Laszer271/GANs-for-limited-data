@@ -99,6 +99,7 @@ if __name__ == '__main__':
         example = visualize(test_images)
         image = Image.fromarray(example)
         image.save(os.path.join(temp_path, 'test_aug.png'))
+        wandb.save('test_aug.png')
         
         test_images = test_images.cuda()
     
@@ -135,8 +136,8 @@ if __name__ == '__main__':
             logs = new_logs
 
             if i % network_snapshot_ticks == 0:
-                gan.save_model(str(i), network_checkpoints)
-                wandb.save(os.path.join(network_checkpoints, str(i)) + '.pt')
+                ckpt_path = gan.save_model(str(i), network_checkpoints)
+                wandb.log_artifact(ckpt_path, name='networks_ckpt')
                 
             if i % image_snapshot_ticks == 0:
                 img = gen_to_wandb(gan, test_noise)

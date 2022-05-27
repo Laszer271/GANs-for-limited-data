@@ -491,6 +491,8 @@ class AEGAN():
              },
             path)
         
+        return path
+        
     def load_model(self, path, name):
         path = os.path.join(path, name) + '.pt'
 
