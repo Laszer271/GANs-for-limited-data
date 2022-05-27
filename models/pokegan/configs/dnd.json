@@ -1,8 +1,8 @@
 {
-    "image_snapshot_ticks": 1,
-    "network_snapshot_ticks": 1,
-    "total_kimg": 1,
-    "n_steps": 2,
+    "image_snapshot_ticks": 25,
+    "network_snapshot_ticks": 25,
+    "total_kimg": 3000,
+    "n_steps": 750,
 
     "input_path": "../processed/dnd",
     "latent_dim": 128,
