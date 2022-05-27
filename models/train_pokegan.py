@@ -132,7 +132,7 @@ if __name__ == '__main__':
             new_logs = gan.train_epoch(config['batch_size'], n_batches=batches_per_step)
             s = f'Step {i+1}/{config["n_steps"]}\n'
             for k, v in new_logs.items():
-                s += '{}={:0.3f}\t'.format(k, v)
+                s += '{}={:0.3f}'.format(k, v)
             print(s, end='\n', flush=True)
 
             logs.update(new_logs)
